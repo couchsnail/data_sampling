@@ -20,6 +20,7 @@ Then run the command:
 The script will prompt you to:
 - Select a class to sample from
 - Choose how many samples to take
+- Specify how many class "orders" to include
 - Specify how many non-class "orders" to include
 - Name the output file
 

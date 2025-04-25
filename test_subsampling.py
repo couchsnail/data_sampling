@@ -60,7 +60,7 @@ def test_sample_from_orders():
     assert len(sampled) == 5
     assert all(sampled['Order'].isin(orders))
 
-# Expected behavior: it will sample the one sample available 5 times
+# Expected behavior: it will sample the one sample, and then an equal number of samples from the other orders
 # Need to check if this is in line with expectations
 def test_sample_from_orders_not_enough():
     orders = ['Carnivora']
@@ -70,21 +70,31 @@ def test_sample_from_orders_not_enough():
 
 # Testing the main sampling function
 def test_sample_data_combination_1():
-    result = sample_data(TEST_DATA, 'Mammal', num_samples=4, num_norders=2)
+    result = sample_data(TEST_DATA, 'Mammal', num_samples=4, num_orders=2, num_norders=2)
     assert len(result) == 8 
     assert 'Class' in result.columns
     assert 'Order' in result.columns
 
 def test_sample_data_combination_2():
-    result = sample_data(TEST_DATA, 'Bird', num_samples=10, num_norders=2)
+    result = sample_data(TEST_DATA, 'Bird', num_samples=10, num_orders=2, num_norders=2)
     assert len(result) == 20
     assert 'Class' in result.columns
     assert 'Order' in result.columns
 
 def test_sample_data_no_class():
     with pytest.raises(ValueError):
-        sample_data(TEST_DATA, 'Fish', num_samples=4, num_norders=2)
+        sample_data(TEST_DATA, 'Fish', num_samples=4, num_orders=2, num_norders=2)
 
-def test_sample_data_not_enough_orders():
+def test_sample_data_unequal_order():
+    result = sample_data(TEST_DATA, 'Bird', num_samples=10, num_orders=1, num_norders=2)
+    assert len(result) == 20
+    assert 'Class' in result.columns
+    assert 'Order' in result.columns
+
+def test_sample_data_not_enough_orders_select():
     with pytest.raises(ValueError):
-        sample_data(TEST_DATA, 'Mammal', num_samples=4, num_norders=10)
+        sample_data(TEST_DATA, 'Mammal', num_samples=4, num_orders=5, num_norders=2)
+
+def test_sample_data_not_enough_orders_nonselect():
+    with pytest.raises(ValueError):
+        sample_data(TEST_DATA, 'Mammal', num_samples=4, num_orders=2, num_norders=10)

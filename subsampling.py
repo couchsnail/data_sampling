@@ -54,14 +54,13 @@ def sample_from_orders(data_subset, orders, total_samples):
             sampled = pd.concat([sampled, subset.sample(n=1, replace=True)], ignore_index=True)
     return sampled
 
-def sample_data(data, selected_class, num_samples, num_norders):
+def sample_data(data, selected_class, num_samples, num_orders, num_norders):
     class_subset = filter_data(data, 'Class', selected_class)
     if class_subset.empty:
         raise ValueError("No data found for the selected class.")
 
     unique_orders = class_subset['Order'].dropna().unique()
-    num_orders_to_sample = min(5, len(unique_orders))
-    chosen_orders = np.random.choice(unique_orders, num_orders_to_sample, replace=False)
+    chosen_orders = np.random.choice(unique_orders, num_orders, replace=False)
     print(f"Selected orders from class '{selected_class}': {chosen_orders}")
 
     selected_samples = sample_from_orders(class_subset, chosen_orders, num_samples)
@@ -92,11 +91,12 @@ def run_data_sampler(tsv_file):
     selected_class = get_user_selected_class(data)
     num_samples = get_user_input("Enter the number of samples to select: ", int, lambda x: x > 0, "Please enter a positive integer.")
     print(f"Number of orders in selected class '{selected_class}': {len(data[data['Class'] == selected_class]['Order'].dropna().unique())}")
+    num_orders = get_user_input("Enter the number of orders to sample from the selected Class: ", int, lambda x: x > 0, "Please enter a positive integer.")
     print(f"Number of orders in non-selected class: {len(data[data['Class'] != selected_class]['Order'].dropna().unique())}")
-    num_norders = get_user_input("Enter the number of non-selected orders to sample: ", int, lambda x: x > 0, "Please enter a positive integer.")
+    num_norders = get_user_input("Enter the number of orders to sample from the non-selected Class: ", int, lambda x: x > 0, "Please enter a positive integer.")
 
     try:
-        result = sample_data(data, selected_class, num_samples, num_norders)
+        result = sample_data(data, selected_class, num_samples, num_orders, num_norders)
         print("Sampled data:")
         print(result)
     except Exception as e:
