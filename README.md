@@ -15,7 +15,7 @@ The script assumes you have python installed on your machine.
 Make sure you are in the data_sampling folder and that you have .tsv file with a 'Class' and 'Order' column. 
 
 Then run the command:
-    python subsampling/subsampling.py --tsv_file path/to/your_data.tsv
+    python subsampling.py --tsv_file path/to/your_data.tsv
 
 The script will prompt you to:
 - Select a class to sample from
