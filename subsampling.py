@@ -91,6 +91,8 @@ def run_data_sampler(tsv_file):
 
     selected_class = get_user_selected_class(data)
     num_samples = get_user_input("Enter the number of samples to select: ", int, lambda x: x > 0, "Please enter a positive integer.")
+    print(f"Number of orders in selected class '{selected_class}': {len(data[data['Class'] == selected_class]['Order'].dropna().unique())}")
+    print(f"Number of orders in non-selected class: {len(data[data['Class'] != selected_class]['Order'].dropna().unique())}")
     num_norders = get_user_input("Enter the number of non-selected orders to sample: ", int, lambda x: x > 0, "Please enter a positive integer.")
 
     try:

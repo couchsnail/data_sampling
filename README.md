@@ -1,10 +1,37 @@
-# data_sampling
-This repository contains a script to sample data from a TSV file according to given parameters into a separate TSV file. 
+# About This Repo
+This repository contains a Python script that helps you extract balanced samples from a dataset based on two key columns: Class and Order. It interactively guides you through choosing a class, how many samples to take, and how many "non-class" orders to include. The result is a new .tsv file containing your sampled data.
 
+# Who Can Use This Script?
+This script was initially developed for the Knight Lab at UC San Diego, but anyone can use it so long as they have a .tsv data file containing Class and Order columns. Other file formats should also work so long as they are tab delimited.
+
+# Before Running
 To make sure you can run this script, please run 'pip install -r requirements.txt'. 
+
+Alternatively: 'pip install pandas numpy'
 
 The script assumes you have python installed on your machine. 
 
-Relevant functions:
-filter_data(): Given a Pandas DataFrame, filter by a given column.
-run_data_sampler(): Loads data in from a tsv file and allows the user to subsample it for bootstrap testing. 
+# How to Run
+Make sure you are in the data_sampling folder and that you have .tsv file with a 'Class' and 'Order' column. 
+
+Then run the command:
+    python subsampling/subsampling.py --tsv_file path/to/your_data.tsv
+
+The script will prompt you to:
+- Select a class to sample from
+- Choose how many samples to take
+- Specify how many non-class "orders" to include
+- Name the output file
+
+Your sampled data will be saved as a new .tsv file.
+
+# Developer Notes
+- Core function: run_data_sampler(tsv_file)
+- Command-line interface is wrapped in main() with argparse
+- All sampling is handled using pandas and numpy
+
+# Other
+There are 3 other files in this repository. 
+- filter_sample: a script that's under construction. It's meant to filter a dataframe based on desired parameters and outputs it to a .tsv file
+- test_subsampling.py: a file used for unit testing subsampling.py
+- subsampling.ipynb: a Jupyter Notebook that's under construction. This is meant to be downloadable as a Google Collab so non-coders can run the core code functionality without downloading python, pandas, etc.
