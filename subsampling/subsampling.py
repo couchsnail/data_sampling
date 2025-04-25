@@ -5,7 +5,7 @@ from itertools import cycle
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for extracting data from a data file")
-    parser.add_argument("--csv_file", type=str, required=True, help="Enter the path to the data file")
+    parser.add_argument("--tsv_file", type=str, required=True, help="Enter the path to the data file")
     return parser.parse_args()
 
 def load_data(file_path):
@@ -85,9 +85,8 @@ def write_output(data, output_file):
     except Exception as e:
         raise RuntimeError(f"Failed to write output: {e}")
 
-def main():
-    args = parse_args()
-    data = load_data(args.csv_file)
+def run_data_sampler(tsv_file):
+    data = load_data(tsv_file)
     print(f"Columns in data: {data.columns.tolist()}")
 
     selected_class = get_user_selected_class(data)
@@ -103,6 +102,10 @@ def main():
 
     output_file_name = get_user_input("Enter the output file name (default: sampled_data.tsv): ", str, lambda x: x.strip() != "", "File name cannot be empty.")
     write_output(result, output_file_name if output_file_name.endswith('.tsv') else output_file_name + '.tsv')
+
+def main():
+    args = parse_args()
+    run_data_sampler(args.tsv_file)
 
 if __name__ == "__main__":
     main()
