@@ -1,6 +1,8 @@
 # About This Repo
 This repository contains a Python script that helps you extract balanced samples from a dataset based on two key columns: Class and Order. It interactively guides you through choosing a class, how many samples to take, and how many "non-class" orders to include. The result is a new .tsv file containing your sampled data.
 
+The script is called 'subsampling.py'
+
 # Who Can Use This Script?
 This script was initially developed for the Knight Lab at UC San Diego, but anyone can use it so long as they have a .tsv data file containing Class and Order columns. Other file formats should also work so long as they are tab delimited.
 

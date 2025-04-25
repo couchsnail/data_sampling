@@ -54,6 +54,9 @@ def sample_from_orders(data_subset, orders, total_samples):
             sampled = pd.concat([sampled, subset.sample(n=1, replace=True)], ignore_index=True)
     return sampled
 
+# Need to update sampling logic
+# NEED TO UPDATE SCRIPT so if there number of available samples is less than the number of desired samples, use all of them, and then sample non-class samples in an equal number
+# Also need to ensure that up to 5 functionality works, esp on the selected group (we know it works on the non-selected group)
 def sample_data(data, selected_class, num_samples, num_orders, num_norders):
     class_subset = filter_data(data, 'Class', selected_class)
     if class_subset.empty:

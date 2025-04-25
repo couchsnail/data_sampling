@@ -40,7 +40,7 @@ def test_filter_data_negative_1():
     result = filter_data(TEST_DATA, 'Class', 'Mammal', negate=True)
     assert all(result['Class'] != 'Mammal')
 
-def test_filter_data_negative_1():
+def test_filter_data_negative_2():
     result = filter_data(TEST_DATA, 'Class', 'Reptile', negate=True)
     assert all(result['Class'] != 'Reptile')
 
@@ -48,7 +48,7 @@ def test_filter_data_empty():
     result = filter_data(TEST_DATA, 'Class', 'Fish')
     assert len(result) == 0
 
-# # Testing the sampling function
+# Testing the sampling function
 def test_sample_from_orders_empty():
     orders = ['Carnivora', 'Primates']
     sampled = sample_from_orders(TEST_DATA, orders, 0)
