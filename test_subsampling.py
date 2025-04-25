@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from data_sampling.subsampling import get_user_selected_class, filter_data, sample_from_orders, sample_data
+from subsampling import get_user_selected_class, filter_data, sample_from_orders, sample_data
 
 # Sample dataframe for tests
 TEST_DATA = pd.DataFrame({
