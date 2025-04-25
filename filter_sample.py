@@ -1,6 +1,6 @@
 import argparse
 import pandas as pd
-from data_sampling.subsampling.subsampling import filter_data, write_output
+from data_sampling.subsampling import filter_data, write_output
 
 def main():
     parser = argparse.ArgumentParser(description="Data subsampling tool")
