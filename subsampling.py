@@ -20,7 +20,12 @@ def load_data(file_path):
 def get_user_input(prompt, input_type=int, condition=lambda x: True, error_msg="Invalid input"):
     while True:
         try:
-            value = input_type(input(prompt))
+            print("Press 'quit' or 'cancel' to exit.")
+            user_input = input(prompt)
+            if user_input.lower() in ["quit", "cancel"]:
+                print("Operation canceled by the user.")
+                return None 
+            value = input_type(user_input)
             if not condition(value):
                 raise ValueError
             return value
@@ -30,11 +35,24 @@ def get_user_input(prompt, input_type=int, condition=lambda x: True, error_msg="
 def get_user_selected_class(data):
     existing_classes = data['Class'].unique()
     while True:
-        selected_class = input(f"Enter a Class to select (options: {existing_classes}): ")
+        print("Press 'quit' or 'cancel' to exit.")
+        selected_class = input(f"Enter a Class to select (options: {existing_classes}, or type 'quit' to cancel): ")
+        if selected_class.lower() in ["quit", "cancel"]:
+            print("Operation canceled by the user.")
+            return None  
         if selected_class in existing_classes:
             return selected_class
         else:
-            raise ValueError("Invalid class selected. Please choose from the available classes.")
+            print("Invalid class selected. Please choose from the available classes.")
+
+# def get_user_selected_class(data):
+#     existing_classes = data['Class'].unique()
+#     while True:
+#         selected_class = input(f"Enter a Class to select (options: {existing_classes}): ")
+#         if selected_class in existing_classes:
+#             return selected_class
+#         else:
+#             raise ValueError("Invalid class selected. Please choose from the available classes.")
 
 def filter_data(data, column, value, negate=False):
     if column not in data.columns:
@@ -97,6 +115,14 @@ def run_data_sampler(tsv_file):
     num_orders = get_user_input("Enter the number of orders to sample from the selected Class: ", int, lambda x: x > 0, "Please enter a positive integer.")
     print(f"Number of orders in non-selected class: {len(data[data['Class'] != selected_class]['Order'].dropna().unique())}")
     num_norders = get_user_input("Enter the number of orders to sample from the non-selected Class: ", int, lambda x: x > 0, "Please enter a positive integer.")
+
+    if num_samples > filter_data(data, 'Class', selected_class).shape[0]:
+        print("Not enough samples in the selected class. Adjusting to maximum available samples.")
+        num_samples = filter_data(data, 'Class', selected_class).shape[0]
+
+    if num_orders > len(data[data['Class'] == selected_class]['Order'].dropna().unique()):
+        print("Not enough unique orders in the selected class. Adjusting to maximum available orders.")
+        num_orders = len(data[data['Class'] == selected_class]['Order'].dropna().unique())
 
     try:
         result = sample_data(data, selected_class, num_samples, num_orders, num_norders)

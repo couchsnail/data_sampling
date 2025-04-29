@@ -32,9 +32,3 @@ Your sampled data will be saved as a new .tsv file.
 - Core function: run_data_sampler(tsv_file)
 - Command-line interface is wrapped in main() with argparse
 - All sampling is handled using pandas and numpy
-
-# Other
-There are 3 other files in this repository. 
-- filter_sample: a script that's under construction. It's meant to filter a dataframe based on desired parameters and outputs it to a .tsv file
-- test_subsampling.py: a file used for unit testing subsampling.py
-- subsampling.ipynb: a Jupyter Notebook that's under construction. This is meant to be downloadable as a Google Collab so non-coders can run the core code functionality without downloading python, pandas, etc.
