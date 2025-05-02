@@ -45,15 +45,6 @@ def get_user_selected_class(data):
         else:
             print("Invalid class selected. Please choose from the available classes.")
 
-# def get_user_selected_class(data):
-#     existing_classes = data['Class'].unique()
-#     while True:
-#         selected_class = input(f"Enter a Class to select (options: {existing_classes}): ")
-#         if selected_class in existing_classes:
-#             return selected_class
-#         else:
-#             raise ValueError("Invalid class selected. Please choose from the available classes.")
-
 def filter_data(data, column, value, negate=False):
     if column not in data.columns:
         raise ValueError(f"Column '{column}' does not exist in the DataFrame.")
@@ -73,8 +64,6 @@ def sample_from_orders(data_subset, orders, total_samples):
     return sampled
 
 # Need to update sampling logic
-# NEED TO UPDATE SCRIPT so if there number of available samples is less than the number of desired samples, use all of them, and then sample non-class samples in an equal number
-# Also need to ensure that up to 5 functionality works, esp on the selected group (we know it works on the non-selected group)
 def sample_data(data, selected_class, num_samples, num_orders, num_norders):
     class_subset = filter_data(data, 'Class', selected_class)
     if class_subset.empty:

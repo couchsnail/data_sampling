@@ -1,4 +1,4 @@
-# Sheet1
+# Test Output
 
 |sampleid|Phylum|Class|Order|Family|Genus|Species|DietSimp|DietSpec|Diet_2|DietClassSimp|DietClassSpec|SimpClass|SimpClass2|SimpClassDiet|Location|Notes|Study|Primer|Primer2|FASTQ.gzfiles|Metadata(custom)|pairedORsingle|initials|duplicate|Species_copy|pref name|species2|taxid|code|Aug8order|Chordata|
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
