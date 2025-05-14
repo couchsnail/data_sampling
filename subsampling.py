@@ -70,6 +70,11 @@ def filter_data(data, column, value, negate=False):
         return data[data[column] == value]
 
 def sample_from_column(data_subset, organization_column, orders_to_sample_from, total_samples):
+    if total_samples > len(data_subset[data_subset[organization_column].isin(orders_to_sample_from)]):
+        raise ValueError(
+            f"Not enough data to sample {total_samples} items from the given {organization_column}."
+        )
+    
     sampled = pd.DataFrame()
     order_cycle = cycle(orders_to_sample_from)
     while len(sampled) < total_samples:
@@ -121,9 +126,25 @@ def run_data_sampler(tsv_file):
     if organization_column is None:
         return
 
+    # Prompts user for the number of samples to select from each group
+    print(f"Number of samples available matching selected value: {len(data[data[selected_column] == selected_value])}")
     num_samples = get_user_input("Enter the number of samples to select from each group: ", int, lambda x: x > 0)
+    if num_samples > len(data[data[selected_column] == selected_value]):
+        print(f"Not enough data to sample {num_samples} items from the given {selected_column}.")
+        num_samples = len(data[data[selected_column] == selected_value])
+    
+    # Prompts user for the number of unique values to sample from
+    # the selected value and the number of unique values to sample from the non-selected group
+    print(f"Number of unique '{organization_column}' values available matching selected value: {len(data[data[selected_column] == selected_value][organization_column].dropna().unique())}")
     num_orders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from {selected_value}: ", int, lambda x: x > 0)
+    if num_orders > len(data[data[selected_column] == selected_value][organization_column].dropna().unique()):
+        print(f"Not enough unique data to sample {num_orders} items from the given {organization_column}.")
+        num_orders = len(data[data[selected_column] == selected_value][organization_column].dropna().unique())
+    print(f"Number of unique '{organization_column}' values available matching non-selected value: {len(data[data[selected_column] != selected_value][organization_column].dropna().unique())}")
     num_norders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from non-{selected_value} group: ", int, lambda x: x > 0)
+    if num_norders > len(data[data[selected_column] != selected_value][organization_column].dropna().unique()):
+        print(f"Not enough unique data to sample {num_norders} items from the given {organization_column}.")
+        num_norders = len(data[data[selected_column] != selected_value][organization_column].dropna().unique())
 
     try:
         result = sample_data(data, selected_value, selected_column, organization_column, num_samples, num_orders, num_norders)
