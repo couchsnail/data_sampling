@@ -9,10 +9,13 @@ def parse_args():
     return parser.parse_args()
 
 def load_data(file_path):
+    file_path_str = str(file_path)
     try:
-        data = pd.read_csv(file_path, sep='\t')
-        if 'Class' not in data.columns or 'Order' not in data.columns:
-            raise KeyError("Dataset must contain 'Class' and 'Order' columns.")
+        # Trying to detect the file type based on the extension
+        if file_path_str.endswith('.tsv') or file_path_str.endswith('.txt'):
+            data = pd.read_csv(file_path_str, sep='\t')
+        else:
+            data = pd.read_csv(file_path_str)
         return data
     except Exception as e:
         raise RuntimeError(f"Failed to load data: {e}")
@@ -32,18 +35,31 @@ def get_user_input(prompt, input_type=int, condition=lambda x: True, error_msg="
         except ValueError:
             print(error_msg)
 
-def get_user_selected_class(data):
-    existing_classes = data['Class'].unique()
+def get_user_selected_column(data, prompt="Select a column: "):
+    existing_columns = data.columns.tolist()
     while True:
         print("Press 'quit' or 'cancel' to exit.")
-        selected_class = input(f"Enter a Class to select (options: {existing_classes}, or type 'quit' to cancel): ")
-        if selected_class.lower() in ["quit", "cancel"]:
+        selected_column = input(f"{prompt} (options: {existing_columns}, or type 'quit' to cancel): ")
+        if selected_column.lower() in ["quit", "cancel"]:
             print("Operation canceled by the user.")
             return None  
-        if selected_class in existing_classes:
-            return selected_class
+        if selected_column in existing_columns:
+            return selected_column
         else:
-            print("Invalid class selected. Please choose from the available classes.")
+            print("Invalid column selected. Please choose from the available columns.")
+
+def get_user_selected_value_from_selected_column(data, selected_column):
+    existing_values = data[selected_column].dropna().unique()
+    while True:
+        print("Press 'quit' or 'cancel' to exit.")
+        selected_value = input(f"Enter a {selected_column} to select (options: {existing_values}, or type 'quit' to cancel): ")
+        if selected_value.lower() in ["quit", "cancel"]:
+            print("Operation canceled by the user.")
+            return None  
+        if selected_value in existing_values:
+            return selected_value
+        else:
+            print("Invalid value selected. Please choose from the available values within this column.")
 
 def filter_data(data, column, value, negate=False):
     if column not in data.columns:
@@ -53,39 +69,71 @@ def filter_data(data, column, value, negate=False):
     else:
         return data[data[column] == value]
 
-def sample_from_orders(data_subset, orders, total_samples):
+def sample_from_column(data_subset, organization_column, orders_to_sample_from, total_samples):
     sampled = pd.DataFrame()
-    order_cycle = cycle(orders)
+    order_cycle = cycle(orders_to_sample_from)
     while len(sampled) < total_samples:
         current_order = next(order_cycle)
-        subset = data_subset[data_subset['Order'] == current_order]
+        subset = data_subset[data_subset[organization_column] == current_order]
         if not subset.empty:
             sampled = pd.concat([sampled, subset.sample(n=1, replace=True)], ignore_index=True)
     return sampled
 
-# Need to update sampling logic
-def sample_data(data, selected_class, num_samples, num_orders, num_norders):
-    class_subset = filter_data(data, 'Class', selected_class)
-    if class_subset.empty:
-        raise ValueError("No data found for the selected class.")
+def sample_data(data, selected_value, selected_column, organization_column, num_samples, num_orders, num_norders):
+    selected_subset = filter_data(data, selected_column, selected_value)
+    if selected_subset.empty:
+        raise ValueError(f"No data matching {selected_value} in {selected_column} found.")
 
-    unique_orders = class_subset['Order'].dropna().unique()
+    unique_orders = selected_subset[organization_column].dropna().unique()
     chosen_orders = np.random.choice(unique_orders, num_orders, replace=False)
-    print(f"Selected orders from class '{selected_class}': {chosen_orders}")
+    print(f"Selected orders from class '{selected_value}': {chosen_orders}")
 
-    selected_samples = sample_from_orders(class_subset, chosen_orders, num_samples)
+    selected_samples = sample_from_column(selected_subset, organization_column, chosen_orders, num_samples)
 
-    nonselected_subset = filter_data(data, 'Class', selected_class, negate=True)
-    valid_norders = nonselected_subset['Order'].dropna().unique()
+    nonselected_subset = filter_data(data, selected_column, selected_value, negate=True)
+    valid_norders = nonselected_subset[organization_column].dropna().unique()
     if num_norders > len(valid_norders):
-        raise ValueError("Not enough unique non-selected orders to sample from.")
+        raise ValueError(f"Not enough unique data matching values that are not {selected_value} to sample from.")
 
     chosen_norders = np.random.choice(valid_norders, num_norders, replace=False)
     print(f"Selected orders from non-selected class: {chosen_norders}")
 
-    nonselected_samples = sample_from_orders(nonselected_subset, chosen_norders, num_samples)
+    nonselected_samples = sample_from_column(nonselected_subset, organization_column, chosen_norders, num_samples)
 
     return pd.concat([selected_samples, nonselected_samples], ignore_index=True)
+
+def run_data_sampler(tsv_file):
+    data = load_data(tsv_file)
+    print(f"Columns in data: {data.columns.tolist()}")
+
+    # Prompts user for the main grouping column (e.g., Class)
+    selected_column = get_user_selected_column(data, "Enter the main grouping column")
+    if selected_column is None:
+        return
+
+    # Prompts user for the value to sample from the selected column (ex: 'Amphibia')
+    selected_value = get_user_selected_value_from_selected_column(data, selected_column)
+    if selected_value is None:
+        return
+
+    # Prompts user for an organization column (e.g., Order)
+    organization_column = get_user_selected_column(data, "Enter the secondary column to organize sampling from")
+    if organization_column is None:
+        return
+
+    num_samples = get_user_input("Enter the number of samples to select from each group: ", int, lambda x: x > 0)
+    num_orders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from {selected_value}: ", int, lambda x: x > 0)
+    num_norders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from non-{selected_value} group: ", int, lambda x: x > 0)
+
+    try:
+        result = sample_data(data, selected_value, selected_column, organization_column, num_samples, num_orders, num_norders)
+        print(result)
+    except Exception as e:
+        print(f"Error during sampling: {e}")
+        return
+
+    output_file = input("Enter output filename (default: sampled_data.tsv): ").strip() or "sampled_data.tsv"
+    write_output(result, output_file if output_file.endswith(".tsv") else output_file + ".tsv")
 
 def write_output(data, output_file):
     try:
@@ -93,35 +141,6 @@ def write_output(data, output_file):
         print(f"Output written to {output_file}")
     except Exception as e:
         raise RuntimeError(f"Failed to write output: {e}")
-
-def run_data_sampler(tsv_file):
-    data = load_data(tsv_file)
-    print(f"Columns in data: {data.columns.tolist()}")
-
-    selected_class = get_user_selected_class(data)
-    num_samples = get_user_input("Enter the number of samples to select: ", int, lambda x: x > 0, "Please enter a positive integer.")
-    print(f"Number of orders in selected class '{selected_class}': {len(data[data['Class'] == selected_class]['Order'].dropna().unique())}")
-    num_orders = get_user_input("Enter the number of orders to sample from the selected Class: ", int, lambda x: x > 0, "Please enter a positive integer.")
-    print(f"Number of orders in non-selected class: {len(data[data['Class'] != selected_class]['Order'].dropna().unique())}")
-    num_norders = get_user_input("Enter the number of orders to sample from the non-selected Class: ", int, lambda x: x > 0, "Please enter a positive integer.")
-
-    if num_samples > filter_data(data, 'Class', selected_class).shape[0]:
-        print("Not enough samples in the selected class. Adjusting to maximum available samples.")
-        num_samples = filter_data(data, 'Class', selected_class).shape[0]
-
-    if num_orders > len(data[data['Class'] == selected_class]['Order'].dropna().unique()):
-        print("Not enough unique orders in the selected class. Adjusting to maximum available orders.")
-        num_orders = len(data[data['Class'] == selected_class]['Order'].dropna().unique())
-
-    try:
-        result = sample_data(data, selected_class, num_samples, num_orders, num_norders)
-        print("Sampled data:")
-        print(result)
-    except Exception as e:
-        print(f"Error during sampling: {e}")
-
-    output_file_name = get_user_input("Enter the output file name (default: sampled_data.tsv): ", str, lambda x: x.strip() != "", "File name cannot be empty.")
-    write_output(result, output_file_name if output_file_name.endswith('.tsv') else output_file_name + '.tsv')
 
 def main():
     args = parse_args()
