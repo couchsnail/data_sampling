@@ -49,17 +49,26 @@ def get_user_selected_column(data, prompt="Select a column: "):
             print("Invalid column selected. Please choose from the available columns.")
 
 def get_user_selected_value_from_selected_column(data, selected_column):
-    existing_values = data[selected_column].dropna().unique()
+    existing_values = data[selected_column].dropna().unique().tolist()
+    if not existing_values:
+        print(f"No values found in column '{selected_column}'.")
+        return None
+    value_type = type(existing_values[0])
     while True:
         print("Press 'quit' or 'cancel' to exit.")
         selected_value = input(f"Enter a {selected_column} to select (options: {existing_values}, or type 'quit' to cancel): ")
         if selected_value.lower() in ["quit", "cancel"]:
             print("Operation canceled by the user.")
-            return None  
-        if selected_value in existing_values:
-            return selected_value
-        else:
-            print("Invalid value selected. Please choose from the available values within this column.")
+            return None
+        try:
+            # Convert input to the correct type
+            typed_value = value_type(selected_value)
+            if typed_value in existing_values:
+                return typed_value
+            else:
+                print("Invalid value selected. Please choose from the available values within this column.")
+        except ValueError:
+            print(f"Invalid type. Please enter a valid {value_type.__name__} value.")
 
 def filter_data(data, column, value, negate=False):
     if column not in data.columns:
@@ -131,6 +140,7 @@ def run_data_sampler(tsv_file):
     num_samples = get_user_input("Enter the number of samples to select from each group: ", int, lambda x: x > 0)
     if num_samples > len(data[data[selected_column] == selected_value]):
         print(f"Not enough data to sample {num_samples} items from the given {selected_column}.")
+        print("Selecting maximum available samples instead.")
         num_samples = len(data[data[selected_column] == selected_value])
     
     # Prompts user for the number of unique values to sample from
@@ -139,11 +149,13 @@ def run_data_sampler(tsv_file):
     num_orders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from {selected_value}: ", int, lambda x: x > 0)
     if num_orders > len(data[data[selected_column] == selected_value][organization_column].dropna().unique()):
         print(f"Not enough unique data to sample {num_orders} items from the given {organization_column}.")
+        print("Selecting maximum available orders instead.")
         num_orders = len(data[data[selected_column] == selected_value][organization_column].dropna().unique())
     print(f"Number of unique '{organization_column}' values available matching non-selected value: {len(data[data[selected_column] != selected_value][organization_column].dropna().unique())}")
     num_norders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from non-{selected_value} group: ", int, lambda x: x > 0)
     if num_norders > len(data[data[selected_column] != selected_value][organization_column].dropna().unique()):
         print(f"Not enough unique data to sample {num_norders} items from the given {organization_column}.")
+        print("Selecting maximum available orders instead.")
         num_norders = len(data[data[selected_column] != selected_value][organization_column].dropna().unique())
 
     try:
