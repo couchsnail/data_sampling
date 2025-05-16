@@ -1,3 +1,4 @@
+.gitignore
 test_subsampling.py
 filter_sample.py
 subsampling.ipynb
