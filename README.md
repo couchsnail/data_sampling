@@ -17,7 +17,9 @@ The script assumes you have python installed on your machine.
 Make sure you are in the data_sampling folder and that you have .tsv, .csv, or .txt file with at least 2 columns. 
 
 Then run the command:
-    python subsampling.py --tsv_file path/to/your_data.tsv
+    python subsampling.py --tsv_file 'path/to/your_data.tsv'
+
+Make sure to put your file path in quotes. 
 
 The script will prompt you to:
 - Select a main grouping column (e.g., 'Class')

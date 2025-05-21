@@ -93,29 +93,29 @@ def sample_from_column(data_subset, organization_column, orders_to_sample_from, 
             sampled = pd.concat([sampled, subset.sample(n=1, replace=True)], ignore_index=True)
     return sampled
 
-def sample_data(data, selected_value, selected_column, organization_column, num_samples, num_orders, num_norders):
-    selected_subset = filter_data(data, selected_column, selected_value)
-    if selected_subset.empty:
-        raise ValueError(f"No data matching {selected_value} in {selected_column} found.")
+def sample_data(data,value,column,organization_column,num_samples,num_orders,negate=False, want_orders=True):
+    subset = filter_data(data, column, value, negate=negate)
+    if subset.empty:
+        raise ValueError(f"No data matching {'not ' if negate else ''}{value} in {column} found.")
 
-    unique_orders = selected_subset[organization_column].dropna().unique()
-    chosen_orders = np.random.choice(unique_orders, num_orders, replace=False)
-    print(f"Selected orders from class '{selected_value}': {chosen_orders}")
+    if want_orders:
+        unique_groups = subset[organization_column].dropna().unique()
+        if num_orders > len(unique_groups):
+            raise ValueError(f"Not enough unique values in {organization_column} to sample {num_orders} groups.")
 
-    selected_samples = sample_from_column(selected_subset, organization_column, chosen_orders, num_samples)
+        chosen_groups = np.random.choice(unique_groups, num_orders, replace=False)
+        group_label = f"non-{value}" if negate else value
+        print(f"Selected orders from {column} '{group_label}': {chosen_groups}")
 
-    nonselected_subset = filter_data(data, selected_column, selected_value, negate=True)
-    valid_norders = nonselected_subset[organization_column].dropna().unique()
-    if num_norders > len(valid_norders):
-        raise ValueError(f"Not enough unique data matching values that are not {selected_value} to sample from.")
+        return sample_from_column(subset, organization_column, chosen_groups, num_samples)
+    else:
+        return subset.sample(n=num_samples, replace=True)
 
-    chosen_norders = np.random.choice(valid_norders, num_norders, replace=False)
-    print(f"Selected orders from non-selected class: {chosen_norders}")
-
-    nonselected_samples = sample_from_column(nonselected_subset, organization_column, chosen_norders, num_samples)
-
-    return pd.concat([selected_samples, nonselected_samples], ignore_index=True)
-
+# Need to redocument this
+# Default: for non-selected values, will just randomly subsample without input number of orders
+# Default if you don't sample anything gets the whole table
+# If the number of desired orders is greater than the number of available orders, 
+# pull entire rest of the table by default
 def run_data_sampler(tsv_file):
     data = load_data(tsv_file)
     print(f"Columns in data: {data.columns.tolist()}")
@@ -143,23 +143,67 @@ def run_data_sampler(tsv_file):
         print("Selecting maximum available samples instead.")
         num_samples = len(data[data[selected_column] == selected_value])
     
+    # Flag for if the user has enough orders to match desired samples
+    enough_orders = True
+
     # Prompts user for the number of unique values to sample from
     # the selected value and the number of unique values to sample from the non-selected group
     print(f"Number of unique '{organization_column}' values available matching selected value: {len(data[data[selected_column] == selected_value][organization_column].dropna().unique())}")
     num_orders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from {selected_value}: ", int, lambda x: x > 0)
+
     if num_orders > len(data[data[selected_column] == selected_value][organization_column].dropna().unique()):
         print(f"Not enough unique data to sample {num_orders} items from the given {organization_column}.")
         print("Selecting maximum available orders instead.")
         num_orders = len(data[data[selected_column] == selected_value][organization_column].dropna().unique())
-    print(f"Number of unique '{organization_column}' values available matching non-selected value: {len(data[data[selected_column] != selected_value][organization_column].dropna().unique())}")
-    num_norders = get_user_input(f"Enter the number of unique '{organization_column}' values to sample from non-{selected_value} group: ", int, lambda x: x > 0)
-    if num_norders > len(data[data[selected_column] != selected_value][organization_column].dropna().unique()):
-        print(f"Not enough unique data to sample {num_norders} items from the given {organization_column}.")
-        print("Selecting maximum available orders instead.")
-        num_norders = len(data[data[selected_column] != selected_value][organization_column].dropna().unique())
+        enough_orders = False
+
+    # Want to check if user wants to input the number of orders to sample from the non-selected group
+    # If not, sample without considering orders
+    num_norders = None
+    choose_orders = get_user_input(
+        "Do you want to input the number of orders to sample from the non-selected group? (y/n): ",
+        str,
+        lambda x: x.lower() in ['y', 'n']
+    )
+    if choose_orders is None:
+        return
+
+    if choose_orders.lower() == 'y':
+        n_unique_norders = len(
+            data[data[selected_column] != selected_value][organization_column].dropna().unique()
+        )
+        print(f"Number of unique '{organization_column}' values available in non-selected group: {n_unique_norders}")
+        num_norders = get_user_input(
+            f"Enter number of unique '{organization_column}' values to sample from non-{selected_value} group: ",
+            int,
+            lambda x: x > 0
+        )
+        if num_norders > n_unique_norders:
+            print(f"Only {n_unique_norders} available. Sampling from all.")
+            num_norders = n_unique_norders
 
     try:
-        result = sample_data(data, selected_value, selected_column, organization_column, num_samples, num_orders, num_norders)
+        selected_sample = sample_data(
+            data, selected_value, selected_column, organization_column,
+            num_samples, num_orders,
+            want_orders=enough_orders
+        )
+
+        if choose_orders.lower() == 'y':
+            non_selected_sample = sample_data(
+                data, selected_value, selected_column, organization_column,
+                num_samples, num_norders,
+                negate=True, want_orders=True
+            )
+        else:
+            # Sample total num_samples from all non-selected data (not per order)
+            non_selected_sample = sample_data(
+                data, selected_value, selected_column, organization_column,
+                num_samples, 0,
+                negate=True, want_orders=False
+            )
+
+        result = pd.concat([selected_sample, non_selected_sample], ignore_index=True)
         print(result)
     except Exception as e:
         print(f"Error during sampling: {e}")
